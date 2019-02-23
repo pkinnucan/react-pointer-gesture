@@ -24,6 +24,8 @@ class Gesture extends React.Component<GestureProps, Object> {
     this._handlePointerDown = this._handlePointerDown.bind(this)
     this._handlePointerMove = this._handlePointerMove.bind(this)
     this._handlePointerUp = this._handlePointerUp.bind(this)
+    this._handlePointerCancel = this._handlePointerCancel.bind(this)
+
 
     this.triggerUserCb = this.triggerUserCb.bind(this)
 
@@ -111,6 +113,13 @@ class Gesture extends React.Component<GestureProps, Object> {
   _handlePointerCancel(e: React.PointerEvent<any>) {
     e.stopPropagation()
     // log(`pointer ${e.pointerId} cancel`)
+    this.triggerUserCb('cancel', e)
+
+    for (let i = 0; i < this.recognizer.length; i++) {
+      this.recognizer[i].pointerCancel(this.pointers, this.props, e)
+    }
+
+    this.pointers.delete(e.pointerId)
   }
 
   render() {

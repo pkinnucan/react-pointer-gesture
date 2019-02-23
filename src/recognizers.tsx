@@ -23,7 +23,7 @@ export class Recognizer {
     constructor () {
         this.recognize = this.recognize.bind(this)
         this.pointerUp = this.pointerUp.bind(this)
-        this.cancel = this.cancel.bind(this)
+        this.pointerCancel = this.pointerCancel.bind(this)
     }
 
     /**
@@ -84,7 +84,7 @@ export class Recognizer {
      * @param {React.PointerEvent<any>} _srcEvent
      * @memberof Recognizer
      */
-    cancel(pointers: Pointers, _callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    pointerCancel(pointers: Pointers, _callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
         this.pointers = [...pointers.values()]
         this.gestureEvent = new GestureEvent({
             gestureType: GestureType.Unknown,
@@ -183,8 +183,8 @@ export class PanRecognizer extends Recognizer {
         }
     }
 
-    cancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.cancel(pointersMap, callbacks, srcEvent)
+    pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+        super.pointerCancel(pointersMap, callbacks, srcEvent)
         const delta = {dx: this.pointers[0].dx!, dy: this.pointers[0].dy!}
 
         if (this.gestureEvent !== undefined) {
@@ -287,8 +287,8 @@ export class PinchRecognizer extends Recognizer {
         }
     }
 
-    cancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.cancel(pointersMap, callbacks, srcEvent)
+    pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+        super.pointerCancel(pointersMap, callbacks, srcEvent)
 
         if (this.gestureEvent !== undefined) {
           this.gestureEvent.gestureType  = GestureType.PinchCancel
@@ -381,8 +381,8 @@ export class RotateRecognizer extends Recognizer {
         }
     }
 
-    cancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.cancel(pointersMap, callbacks, srcEvent)
+    pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+        super.pointerCancel(pointersMap, callbacks, srcEvent)
 
         if (this.gestureEvent !== undefined) {
           this.gestureEvent.gestureType  = GestureType.RotateCancel

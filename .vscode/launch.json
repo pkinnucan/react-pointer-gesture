@@ -5,51 +5,17 @@
   "version": "0.2.0",
   "configurations": [
       {
-        "name": "Debug CRA Tests",
+        "name": "Debug Jest Tests", // See https://facebook.github.io/create-react-app/docs/debugging-tests
         "type": "node",
         "request": "launch",
+        // Note: react-scripts changes jsx in tsconfig from "react" to "preserve". 
+        // jsx needs to be "react" to run tests outside of the debugger.
         "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/react-scripts",
         "args": ["test", "--runInBand", "--no-cache", "--env=jsdom"],
         "cwd": "${workspaceRoot}",
         "protocol": "inspector",
         "console": "integratedTerminal",
         "internalConsoleOptions": "neverOpen"
-      },
-    {
-      "name": "Jest", // This is the configuration name you will see in debug sidebar
-      "type": "node",
-      "request": "launch",
-      "port": 5858,
-      "address": "localhost",
-      "stopOnEntry": false,
-      "runtimeExecutable": null,
-      "runtimeArgs": [
-        "--inspect-brk",
-        "${workspaceRoot}/node_modules/jest/bin/jest.js", // Path to Jest
-        "--runInBand",
-      ],
-      "cwd": "${workspaceRoot}",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-  },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug Jest Tests",
-      "cwd": "${workspaceFolder}",
-      "sourceMaps": true,
-      "args": [
-        "${workspaceRoot}/node_modules/.bin/jest",
-        "--runInBand",
-      ],
-      "windows": {
-        "args": [
-          "${workspaceRoot}/node_modules/jest/bin/jest.js",
-          "--runInBand",
-        ],
-      },
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-    },
+      }
   ]
 }
