@@ -447,41 +447,46 @@ export class SwipeRecognizer extends Recognizer {
 
             const curTime = Date.now()
 
-            const triggerDistance = 10
-            const triggerVelocity = 0.33
+            const triggerDistance = 10 // pixels
+            const triggerVelocity = 0.33 // pixels per millisecond
 
             const swipeDistance =  Math.sqrt(dx * dx + dy * dy)
             const swipeVelocity = swipeDistance/(curTime - this.startTime!)
 
             // log(`Swipe distance: ${swipeDistance} Swipe velocity ${swipeVelocity}`)
 
-            if (swipeDistance > triggerDistance && swipeVelocity > triggerVelocity) {
+            // Trigger a swipe event if he swipe is fast enough or long enough.
+            if (swipeVelocity > triggerVelocity || swipeDistance > triggerDistance) {
                 const moveDirection = getMoveDirection(dx, dy)
                 
-                this.gestureEvent!.delta = {dx, dy}
-                this.gestureEvent!.direction = moveDirection
-                this.gestureEvent!.gestureType = GestureType.Swipe 
-                this.triggerEvent(callbacks)
+                if (moveDirection !== MoveDirection.None) {
 
+                  this.gestureEvent!.delta = {dx, dy}
+                  this.gestureEvent!.direction = moveDirection
+  
+                  this.gestureEvent!.gestureType = GestureType.Swipe 
+                  this.triggerEvent(callbacks)
 
-                switch (moveDirection) {
-                    case MoveDirection.Left:
-                        this.gestureEvent!.gestureType = GestureType.SwipeLeft
-                        break
-                    case MoveDirection.Right:
-                        this.gestureEvent!.gestureType = GestureType.SwipeRight
-                        break
-                    case MoveDirection.Up:
-                        this.gestureEvent!.gestureType = GestureType.SwipeUp
-                        break
-                    case MoveDirection.Down:
-                        this.gestureEvent!.gestureType = GestureType.SwipeDown
-                        break
+  
+                  switch (moveDirection) {
+                      case MoveDirection.Left:
+                          this.gestureEvent!.gestureType = GestureType.SwipeLeft
+                          break
+                      case MoveDirection.Right:
+                          this.gestureEvent!.gestureType = GestureType.SwipeRight
+                          break
+                      case MoveDirection.Up:
+                          this.gestureEvent!.gestureType = GestureType.SwipeUp
+                          break
+                      case MoveDirection.Down:
+                          this.gestureEvent!.gestureType = GestureType.SwipeDown
+                          break
+                  }
+  
+                  this.triggerEvent(callbacks)
+                  return true
 
                 }
-
-                this.triggerEvent(callbacks)
-                return true
 
             }
 
@@ -491,6 +496,18 @@ export class SwipeRecognizer extends Recognizer {
             return false
         }
     }
+
+    pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+      super.pointerCancel(pointersMap, callbacks, srcEvent)
+
+      if (this.gestureEvent !== undefined) {
+        this.gestureEvent.gestureType  = GestureType.SwipeCancel
+        this.triggerEvent(callbacks)
+      } else {
+        throw Error("gestureEvent undefined")
+      }
+
+  }
  
 }
 

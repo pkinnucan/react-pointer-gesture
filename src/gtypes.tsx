@@ -149,6 +149,7 @@ export enum GestureType {
     SwipeRight = 'SwipeRight',
     SwipeUp = 'SwipeUp',
     SwipeDown = 'SwipeDown',
+    SwipeCancel = 'SwipeCancel',
 
     Unknown  = 'Unknown'
 
@@ -226,6 +227,7 @@ export type GestureProps = {
     onSwipeRight?: GestureEventHandler;
     onSwipeUp?: GestureEventHandler;
     onSwipeDown?: GestureEventHandler;
+    onSwipeCancel?: GestureEventHandler;
 
     // original dom element event handler
     onPointerDown?: React.PointerEventHandler<any>;

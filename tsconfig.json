@@ -16,7 +16,8 @@
     "moduleResolution": "node",
     "pretty": true,
     "target": "es2015",
-    "jsx": "react", // debug script changes this to "preserve". Needs to be "react" to run outside debugger.
+    // CRS debug script changes react to preserve. Need to reset to run outside debugger
+    "jsx": "react",
     "outDir": "lib",
     "lib": [
       "dom",
