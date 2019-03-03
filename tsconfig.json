@@ -16,7 +16,6 @@
     "moduleResolution": "node",
     "pretty": true,
     "target": "es2015",
-    // CRS debug script changes react to preserve. Need to reset to run outside debugger
     "jsx": "react",
     "outDir": "lib",
     "lib": [

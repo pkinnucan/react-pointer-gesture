@@ -17,8 +17,8 @@ import {PointerDiff,
  */
 export class Recognizer { 
     
-    gestureEvent: GestureEvent | undefined
     pointers = new Array<Pointer>()
+    srcEvent: React.PointerEvent<any> | undefined = undefined
 
     constructor () {
         this.recognize = this.recognize.bind(this)
@@ -37,27 +37,18 @@ export class Recognizer {
      */
     recognize(pointerMap: Pointers, _callbacks: GestureProps, srcEvent: React.PointerEvent<any>): boolean {
         this.pointers = [...pointerMap.values()]
-        this.gestureEvent = new GestureEvent({
-            gestureType: GestureType.Unknown,
-            pointers: this.pointers,
-            srcEvent})
+        this.srcEvent = srcEvent
         return true
     }
 
     pointerDown(pointerMap: Pointers, _callbacks: GestureProps, srcEvent: React.PointerEvent<any>): void {
         this.pointers = [...pointerMap.values()]
-        this.gestureEvent = new GestureEvent({
-            gestureType: GestureType.Unknown,
-            pointers: this.pointers,
-            srcEvent})
+        this.srcEvent = srcEvent
     }
 
     pointerMove(pointers: Pointers, _callbacks: GestureProps, srcEvent: React.PointerEvent<any>): void {
         this.pointers = [...pointers.values()]
-        this.gestureEvent = new GestureEvent({
-            gestureType: GestureType.Unknown,
-            pointers: this.pointers,
-            srcEvent})
+        this.srcEvent = srcEvent
     }
 
     /**
@@ -70,10 +61,7 @@ export class Recognizer {
      */
     pointerUp(pointers: Pointers, _callbacks: GestureProps, srcEvent: React.PointerEvent<any>): void {
         this.pointers = [...pointers.values()]
-        this.gestureEvent = new GestureEvent({
-            gestureType: GestureType.Unknown,
-            pointers: this.pointers,
-            srcEvent})
+        this.srcEvent = srcEvent
     }
 
     /**
@@ -86,24 +74,23 @@ export class Recognizer {
      */
     pointerCancel(pointers: Pointers, _callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
         this.pointers = [...pointers.values()]
-        this.gestureEvent = new GestureEvent({
-            gestureType: GestureType.Unknown,
-            pointers: this.pointers,
-            srcEvent})
+        this.srcEvent = srcEvent
     }
 
-    triggerEvent(callbacks: GestureProps) {
-      if (this.gestureEvent !== undefined) {
-        const gestureEvent = this.gestureEvent
-        const gestureType = gestureEvent.gestureType
+  createGestureEvent() {
+    return new GestureEvent({
+      gestureType: GestureType.Unknown,
+      pointers: this.pointers,
+      srcEvent: this.srcEvent!})
+  }
 
-        const callback = 'on' + gestureType
-
-        if (callbacks[callback] !== undefined) {
-            callbacks[callback](gestureEvent)
-        }
-      }      
+  triggerEvent(callbacks: GestureProps, gestureEvent: GestureEvent) {
+    const gestureType = gestureEvent.gestureType
+    const callback = 'on' + gestureType
+    if (callbacks[callback] !== undefined) {
+      callbacks[callback](gestureEvent)
     }
+  }      
 
 }
 
@@ -130,72 +117,74 @@ export class PanRecognizer extends Recognizer {
         this.isPanStart = true
     }
 
-    pointerMove(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.pointerMove(pointersMap, callbacks, srcEvent)
+  pointerMove(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerMove(pointersMap, callbacks, srcEvent)
+    this.recognize(pointersMap, callbacks, srcEvent)
+  }
 
-        this.recognize(pointersMap, callbacks, srcEvent)
+  recognize(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>): boolean {
+    super.recognize(pointersMap, callbacks, srcEvent)
+    const onSwipe = callbacks.onSwipe || callbacks.onSwipeDown || callbacks.onSwipeUp
+      || callbacks.onSwipeLeft || callbacks.onSwipeRight
+
+    if (this.pointers.length === 1 && !onSwipe) {
+
+      let gestureEvent = this.createGestureEvent()
+
+      const delta = { dx: this.pointers[0].dx!, dy: this.pointers[0].dy! }
+      gestureEvent.delta = delta
+
+      gestureEvent.gestureType = GestureType.Pan
+      this.triggerEvent(callbacks, gestureEvent)
+
+      gestureEvent = this.createGestureEvent()
+
+      if (this.isPanStart) {
+        gestureEvent.gestureType = GestureType.PanStart
+        this.triggerEvent(callbacks, gestureEvent)
+        this.isPanStart = false
+      } else {
+        gestureEvent.gestureType = GestureType.PanMove
+        this.triggerEvent(callbacks, gestureEvent)
+      }
+
+      gestureEvent = this.createGestureEvent()
+
+      const gestureType = 'Pan' + this.pointers[0].moveDirection
+      gestureEvent.gestureType = GestureType[gestureType]
+      this.triggerEvent(callbacks, gestureEvent)
+
+      return true
+    } else {
+      return false
     }
 
-    recognize(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>): boolean {
-        super.recognize(pointersMap, callbacks, srcEvent)
-        const onSwipe = callbacks.onSwipe || callbacks.onSwipeDown || callbacks.onSwipeUp 
-        || callbacks.onSwipeLeft || callbacks.onSwipeRight
+  }
 
-        if (this.pointers.length === 1 && !onSwipe && this.gestureEvent !== undefined) {
+  pointerUp(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerUp(pointersMap, callbacks, srcEvent)
 
-            const delta = {dx: this.pointers[0].dx!, dy: this.pointers[0].dy!}
-            this.gestureEvent.delta = delta
+    let gestureEvent = this.createGestureEvent()
 
-            this.gestureEvent.gestureType = GestureType.Pan
-            this.triggerEvent(callbacks)
+    const delta = { dx: this.pointers[0].dx!, dy: this.pointers[0].dy! }
 
-            if (this.isPanStart) {
-                this.gestureEvent.gestureType = GestureType.PanStart
-                this.triggerEvent(callbacks)
-                this.isPanStart = false
-            } else {
-                this.gestureEvent.gestureType = GestureType.PanMove
-                this.triggerEvent(callbacks)
-            }
+    gestureEvent.delta = delta
 
-            const gestureType = 'Pan' + this.pointers[0].moveDirection
-            this.gestureEvent.gestureType  = GestureType[gestureType]
-            this.triggerEvent(callbacks)
+    gestureEvent.gestureType = GestureType.PanEnd
+    this.triggerEvent(callbacks, gestureEvent)
 
-            return true
-        } else {
-            return false
-        }
+  }
 
-    }
+  pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerCancel(pointersMap, callbacks, srcEvent)
+    const delta = { dx: this.pointers[0].dx!, dy: this.pointers[0].dy! }
 
-    pointerUp(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.pointerUp(pointersMap, callbacks, srcEvent)
-        const delta = {dx: this.pointers[0].dx!, dy: this.pointers[0].dy!}
+    let gestureEvent = this.createGestureEvent()
 
-        if (this.gestureEvent !== undefined) {
-          this.gestureEvent.delta = delta
-
-          this.gestureEvent.gestureType  = GestureType.PanEnd
-          this.triggerEvent(callbacks)
-        } else {
-          throw Error("gesture event undefined")
-        }
-    }
-
-    pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.pointerCancel(pointersMap, callbacks, srcEvent)
-        const delta = {dx: this.pointers[0].dx!, dy: this.pointers[0].dy!}
-
-        if (this.gestureEvent !== undefined) {
-          this.gestureEvent.delta = delta
-          this.gestureEvent.gestureType  = GestureType.PanCancel
-          this.triggerEvent(callbacks)
-        } else {
-          throw Error("gesture event undefined")
-        }
-
-    }
+    gestureEvent.delta = delta
+    gestureEvent.gestureType = GestureType.PanCancel
+    this.triggerEvent(callbacks, gestureEvent)
+  }
 }
 
 /**
@@ -210,189 +199,210 @@ export class PanRecognizer extends Recognizer {
  */
 export class PinchRecognizer extends Recognizer {
 
-    prevPointerDiff?: PointerDiff = undefined
+  prevPointerDiff?: PointerDiff = undefined
 
-    pointerDown(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.pointerDown(pointersMap, callbacks, srcEvent)
-        this.prevPointerDiff = undefined
-    }
+  pointerDown(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerDown(pointersMap, callbacks, srcEvent)
+    this.prevPointerDiff = undefined
+  }
 
     pointerMove(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
         super.pointerMove(pointerMap, callbacks, srcEvent)
         this.recognize(pointerMap, callbacks, srcEvent)
     }
 
-    recognize(pointers: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>): boolean {
-        super.pointerUp(pointers, callbacks, srcEvent)
+  recognize(pointers: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>): boolean {
+    super.pointerUp(pointers, callbacks, srcEvent)
 
-        // If two pointers are down, check for pinch gestures
-        if (pointers.size === 2 && this.gestureEvent !== undefined) {
+    // If two pointers are down, check for pinch gestures
+    if (pointers.size === 2) {
 
-            this.gestureEvent.gestureType = GestureType.PinchStart
-            this.triggerEvent(callbacks)
+      let gestureEvent = this.createGestureEvent()
 
-            // Calculate the difference between the two pointers. The difference
-            // is a vector resulting from subtracting the position vector of one
-            // pointer from the position vector of the other.
-            const ptrs = this.gestureEvent.pointers
-            const ptr1 = ptrs[0]
-            const ptr2 = ptrs[1]
+      gestureEvent.gestureType = GestureType.PinchStart
+      this.triggerEvent(callbacks, gestureEvent)
 
-            // log(`ptr1 = (${ptr1.x},${ptr1.y}) ptr2 = (${ptr2.x},${ptr2.y})`)
+      // Calculate the difference between the two pointers. The difference
+      // is a vector resulting from subtracting the position vector of one
+      // pointer from the position vector of the other.
+      const ptrs = this.pointers
+      const ptr1 = ptrs[0]
+      const ptr2 = ptrs[1]
 
-            const curPointerDiff = new PointerDiff(ptr1, ptr2)
+      // log(`ptr1 = (${ptr1.x},${ptr1.y}) ptr2 = (${ptr2.x},${ptr2.y})`)
 
-            if (this.prevPointerDiff !== undefined) {
+      const curPointerDiff = new PointerDiff(ptr1, ptr2)
 
-                const curDiff = curPointerDiff.length
-                const prevDiff = this.prevPointerDiff.length
+      if (this.prevPointerDiff !== undefined) {
 
-                // log(`prevDiff: ${prevDiff}, curDiff: ${curDiff}`)
+        const curDiff = curPointerDiff.length
+        const prevDiff = this.prevPointerDiff.length
 
-                if (prevDiff > 0) {
+        // log(`prevDiff: ${prevDiff}, curDiff: ${curDiff}`)
 
-                    const scale = curDiff / prevDiff
-                    this.gestureEvent.scale = scale
+        if (prevDiff > 0) {
 
-                    if (scale > 1) {
-                        // The distance between the two pointers has increased
-                        // log("Pinch moving OUT -> Zoom in");
-                        this.gestureEvent.gestureType = GestureType.PinchIn
-                        this.triggerEvent(callbacks)
-                    } else {
-                        // The distance between the two pointers has decreased
-                        // log("Pinch moving IN -> Zoom out");
-                        this.gestureEvent.gestureType = GestureType.PinchOut
-                        this.triggerEvent(callbacks)
-                    }
+          gestureEvent = this.createGestureEvent()
 
-                    this.gestureEvent.gestureType = GestureType.Pinch
-                    this.triggerEvent(callbacks)
+          const scale = curDiff / prevDiff
+          gestureEvent.scale = scale
 
-                }
+          if (scale > 1) {
+            // The distance between the two pointers has increased
+            // log("Pinch moving OUT -> Zoom in");
+            gestureEvent.gestureType = GestureType.PinchOut
+            this.triggerEvent(callbacks, gestureEvent)
+          } else {
+            // The distance between the two pointers has decreased
+            // log("Pinch moving IN -> Zoom out");
+            gestureEvent.gestureType = GestureType.PinchIn
+            this.triggerEvent(callbacks, gestureEvent)
+          }
 
-            }
+          gestureEvent =this.createGestureEvent()
+          gestureEvent.gestureType = GestureType.Pinch
+          gestureEvent.scale = scale
+          this.triggerEvent(callbacks, gestureEvent)
 
-            // Cache the distance for the next move event 
-            this.prevPointerDiff = curPointerDiff;
-            return true
         }
+      }
 
-        if (this.prevPointerDiff !== undefined && this.gestureEvent !== undefined) {
-            this.gestureEvent.gestureType = GestureType.PinchEnd
-            this.triggerEvent(callbacks)
-            return true
-        } else {
-            return false
-        }
+      // Cache the distance for the next move event 
+      this.prevPointerDiff = curPointerDiff;
+      return true
     }
 
-    pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.pointerCancel(pointersMap, callbacks, srcEvent)
-
-        if (this.gestureEvent !== undefined) {
-          this.gestureEvent.gestureType  = GestureType.PinchCancel
-          this.triggerEvent(callbacks)
-        } else {
-          throw Error("gesture event undefined")
-        }
-
+    if (this.prevPointerDiff !== undefined) {
+      const gestureEvent = this.createGestureEvent()
+      gestureEvent.gestureType = GestureType.PinchEnd
+      this.triggerEvent(callbacks,gestureEvent)
+      return true
+    } else {
+      return false
     }
+  }
+
+  pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerCancel(pointersMap, callbacks, srcEvent)
+
+    const gestureEvent = this.createGestureEvent()
+    gestureEvent.gestureType = GestureType.PanCancel
+    gestureEvent.gestureType = GestureType.PinchCancel
+    this.triggerEvent(callbacks, gestureEvent)
+  }     
 
 }
 
 export class RotateRecognizer extends Recognizer {
 
-    prevPointerDiff?: PointerDiff = undefined
+  prevPointerDiff?: PointerDiff = undefined
 
-    pointerDown(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.pointerDown(pointersMap, callbacks, srcEvent)
-        this.prevPointerDiff = undefined
+  pointerDown(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerDown(pointersMap, callbacks, srcEvent)
+    this.prevPointerDiff = undefined
+  }
+
+  pointerMove(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerMove(pointerMap, callbacks, srcEvent)
+    this.recognize(pointerMap, callbacks, srcEvent)
+  }
+
+  recognize(pointers: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>): boolean {
+    super.pointerUp(pointers, callbacks, srcEvent)
+
+    // log('Rotate Recognizer')
+    // log (`Callbacks: ${Object.keys(callbacks)}`)
+
+    // Do not attempt rotate recognition if the client is also testing for pinch
+    // recognition. The following line tests if the client callbacks include callbacks
+    // that start with onPinch, e.g., onPinch, onPinchStart, etc.
+    if (Object.keys(callbacks).some((prop): boolean => { return prop.indexOf('onPinch') === 0 })) {
+      return false
     }
 
-    pointerMove(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.pointerMove(pointerMap, callbacks, srcEvent)
-        this.recognize(pointerMap, callbacks, srcEvent)
+    // If two pointers are down, check for rotate gestures
+    if (pointers.size === 2) {
+
+      let gestureEvent = new GestureEvent({
+        gestureType: GestureType.PinchCancel,
+        pointers: this.pointers,
+        srcEvent
+      })
+
+      gestureEvent.gestureType = GestureType.RotateStart
+      this.triggerEvent(callbacks, gestureEvent)
+
+      // Calculate the difference between the two pointers. The difference
+      // is a vector resulting from subtracting the position vector of one
+      // pointer from the position vector of the other.
+      const ptrs = this.pointers
+      const ptr1 = ptrs[0]
+      const ptr2 = ptrs[1]
+
+      // log(`ptr1 = (${ptr1.x},${ptr1.y}) ptr2 = (${ptr2.x},${ptr2.y})`)
+
+      const curPointerDiff = new PointerDiff(ptr1, ptr2)
+
+      if (this.prevPointerDiff !== undefined) {
+
+        // log('Rotate')
+
+        const curDiffAngle = curPointerDiff.angle
+        const prevDiffAngle = this.prevPointerDiff.angle
+
+        // log(`prevDiff: ${prevDiff}, curDiff: ${curDiff}`)
+
+        const angle = curDiffAngle - prevDiffAngle
+
+        if (angle !== 0) {
+
+          // The pointer difference vector has rotated. Trigger a
+          // rotate event
+
+          let gestureEvent = new GestureEvent({
+            gestureType: GestureType.PinchCancel,
+            pointers: this.pointers,
+            srcEvent
+          })
+
+          gestureEvent.angle = angle
+          gestureEvent.gestureType = GestureType.Rotate
+          this.triggerEvent(callbacks, gestureEvent)
+        }
+
+        this.prevPointerDiff = curPointerDiff
+        return true
+      }
+
+      this.prevPointerDiff = curPointerDiff
     }
 
-    recognize(pointers: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>): boolean {
-        super.pointerUp(pointers, callbacks, srcEvent)
-
-        // log('Rotate Recognizer')
-        // log (`Callbacks: ${Object.keys(callbacks)}`)
-
-        // Do not attempt rotate recognition if the client is also testing for pinch
-        // recognition. The following line tests if the client callbacks include callbacks
-        // that start with onPinch, e.g., onPinch, onPinchStart, etc.
-        if (Object.keys(callbacks).some((prop): boolean => { return prop.indexOf('onPinch') === 0})) {
-            return false
-        }
-
-        // If two pointers are down, check for rotate gestures
-        if (pointers.size === 2 && this.gestureEvent !== undefined) {
-            this.gestureEvent.gestureType = GestureType.RotateStart
-            this.triggerEvent(callbacks)
-
-            // Calculate the difference between the two pointers. The difference
-            // is a vector resulting from subtracting the position vector of one
-            // pointer from the position vector of the other.
-            const ptrs = this.gestureEvent.pointers
-            const ptr1 = ptrs[0]
-            const ptr2 = ptrs[1]
-
-            // log(`ptr1 = (${ptr1.x},${ptr1.y}) ptr2 = (${ptr2.x},${ptr2.y})`)
-
-            const curPointerDiff = new PointerDiff(ptr1, ptr2)
-
-            if (this.prevPointerDiff !== undefined) {
-
-                // log('Rotate')
-
-                const curDiffAngle = curPointerDiff.angle
-                const prevDiffAngle = this.prevPointerDiff.angle
-
-                // log(`prevDiff: ${prevDiff}, curDiff: ${curDiff}`)
-
-                const angle = curDiffAngle - prevDiffAngle
-
-                if (angle !== 0) {
-
-                    // The pointer difference vector has rotated. Trigger a
-                    // rotate event
-
-                    this.gestureEvent.angle = angle
-                    this.gestureEvent.gestureType = GestureType.Rotate
-                    this.triggerEvent(callbacks)
-                } 
-
-                this.prevPointerDiff = curPointerDiff
-                return true
-            }  
-
-            this.prevPointerDiff = curPointerDiff
-        }
-
-        if (this.prevPointerDiff !== undefined && this.gestureEvent !== undefined) {
-            this.gestureEvent.gestureType = GestureType.PinchEnd
-            this.triggerEvent(callbacks)
-            return true
-        } else {
-            return false
-        }
+    if (this.prevPointerDiff !== undefined) {
+      let gestureEvent = new GestureEvent({
+        gestureType: GestureType.PinchCancel,
+        pointers: this.pointers,
+        srcEvent
+      })
+      gestureEvent.gestureType = GestureType.RotateEnd
+      this.triggerEvent(callbacks, gestureEvent)
+      return true
+    } else {
+      return false
     }
+  }
 
-    pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.pointerCancel(pointersMap, callbacks, srcEvent)
+  pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerCancel(pointersMap, callbacks, srcEvent)
+    let gestureEvent = new GestureEvent({
+      gestureType: GestureType.PinchCancel,
+      pointers: this.pointers,
+      srcEvent
+    })
 
-        if (this.gestureEvent !== undefined) {
-          this.gestureEvent.gestureType  = GestureType.RotateCancel
-          this.triggerEvent(callbacks)
-        } else {
-          throw Error("gestureEvent undefined")
-        }
+    gestureEvent.gestureType = GestureType.RotateCancel
+      this.triggerEvent(callbacks, gestureEvent)
+  }
 
-    }
-   
 }
 
 /**
@@ -414,23 +424,19 @@ export class SwipeRecognizer extends Recognizer {
     }
 
 
-    pointerMove(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.pointerMove(pointerMap, callbacks, srcEvent)
+  pointerMove(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerMove(pointerMap, callbacks, srcEvent)
 
-        if (this.gestureEvent !== undefined) {
-          const pointers = this.gestureEvent.pointers
-          if (pointers.length === 1) {
-              if (this.startX === undefined) {
-                  this.startX = pointers[0].x
-                  this.startY = pointers[0].y
-                  this.startTime = Date.now()
-              }
-          }
-        } else {
-          throw Error("gesture event undefined")
-        }
-
+    const pointers = this.pointers
+    if (pointers.length === 1) {
+      if (this.startX === undefined) {
+        this.startX = pointers[0].x
+        this.startY = pointers[0].y
+        this.startTime = Date.now()
+      }
     }
+
+  }
 
     pointerUp(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
         super.pointerUp(pointerMap, callbacks, srcEvent)
@@ -439,7 +445,7 @@ export class SwipeRecognizer extends Recognizer {
 
     recognize(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>): boolean {
         super.recognize(pointerMap, callbacks, srcEvent)
-        const pointers = this.gestureEvent!.pointers
+        const pointers = this.pointers
         if (pointers.length === 1) {
 
             const dx = pointers[0].x - this.startX!
@@ -461,29 +467,35 @@ export class SwipeRecognizer extends Recognizer {
                 
                 if (moveDirection !== MoveDirection.None) {
 
-                  this.gestureEvent!.delta = {dx, dy}
-                  this.gestureEvent!.direction = moveDirection
-  
-                  this.gestureEvent!.gestureType = GestureType.Swipe 
-                  this.triggerEvent(callbacks)
+                  let gestureEvent = this.createGestureEvent()
 
+                  gestureEvent.delta = {dx, dy}
+                  gestureEvent.direction = moveDirection
   
+                  gestureEvent.gestureType = GestureType.Swipe 
+                  this.triggerEvent(callbacks, gestureEvent)
+
+                  gestureEvent = this.createGestureEvent()
+
+                  gestureEvent.delta = {dx, dy}
+                  gestureEvent.direction = moveDirection
+                  
                   switch (moveDirection) {
                       case MoveDirection.Left:
-                          this.gestureEvent!.gestureType = GestureType.SwipeLeft
+                          gestureEvent!.gestureType = GestureType.SwipeLeft
                           break
                       case MoveDirection.Right:
-                          this.gestureEvent!.gestureType = GestureType.SwipeRight
+                          gestureEvent!.gestureType = GestureType.SwipeRight
                           break
                       case MoveDirection.Up:
-                          this.gestureEvent!.gestureType = GestureType.SwipeUp
+                          gestureEvent!.gestureType = GestureType.SwipeUp
                           break
                       case MoveDirection.Down:
-                          this.gestureEvent!.gestureType = GestureType.SwipeDown
+                          gestureEvent!.gestureType = GestureType.SwipeDown
                           break
                   }
   
-                  this.triggerEvent(callbacks)
+                  this.triggerEvent(callbacks, gestureEvent)
                   return true
 
                 }
@@ -497,71 +509,68 @@ export class SwipeRecognizer extends Recognizer {
         }
     }
 
-    pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-      super.pointerCancel(pointersMap, callbacks, srcEvent)
-
-      if (this.gestureEvent !== undefined) {
-        this.gestureEvent.gestureType  = GestureType.SwipeCancel
-        this.triggerEvent(callbacks)
-      } else {
-        throw Error("gestureEvent undefined")
-      }
-
+  pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerCancel(pointersMap, callbacks, srcEvent)
+    const gestureEvent = this.createGestureEvent()
+    gestureEvent.gestureType = GestureType.SwipeCancel
+    this.triggerEvent(callbacks, gestureEvent)
   }
  
 }
 
 export class TapRecognizer extends Recognizer {
 
-    timeAtPointerDown: number | undefined
-    tapType: GestureType | undefined
-    handlerName: string | undefined
+  timeAtPointerDown: number | undefined
+  tapType: GestureType | undefined
+  handlerName: string | undefined
 
-    static doubleTapTarget: any | undefined = undefined
+  static doubleTapTarget: any | undefined = undefined
 
 
-    pointerDown(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.pointerDown(pointersMap, callbacks, srcEvent)
-        this.timeAtPointerDown = Date.now()
-        const target: any = srcEvent.target
-        if (target !== TapRecognizer.doubleTapTarget ||
-            this.tapType === GestureType.DoubleTap) {
-            TapRecognizer.doubleTapTarget = target
-            this.tapType = GestureType.Tap
-            this.handlerName = 'onTap'
+  pointerDown(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerDown(pointersMap, callbacks, srcEvent)
+    this.timeAtPointerDown = Date.now()
+    const target: any = srcEvent.target
+    if (target !== TapRecognizer.doubleTapTarget ||
+      this.tapType === GestureType.DoubleTap) {
+      TapRecognizer.doubleTapTarget = target
+      this.tapType = GestureType.Tap
+      this.handlerName = 'onTap'
+    }
+  }
+
+
+  pointerUp(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerUp(pointerMap, callbacks, srcEvent)
+    this.recognize(pointerMap, callbacks, srcEvent)
+  }
+
+  recognize(pointers: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>): boolean {
+    super.recognize(pointers, callbacks, srcEvent)
+    if (pointers.size === 1) {
+
+      if (callbacks[this.handlerName!] !== undefined) {
+
+        const timeAtPointerUp = Date.now()
+        let clickDuration = (timeAtPointerUp - this.timeAtPointerDown!);
+        clickDuration = clickDuration / 1000
+
+        if (clickDuration < .25) {
+          const gestureEvent = this.createGestureEvent()
+          gestureEvent.gestureType = this.tapType!
+          callbacks[this.handlerName!](gestureEvent)
         }
+      }
+
+      if (this.tapType = GestureType.Tap) {
+        this.tapType = GestureType.DoubleTap
+        this.handlerName = 'onDoubleTap'
+      }
+
+      return true
     }
-
-
-    pointerUp(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.pointerUp(pointerMap, callbacks, srcEvent)
-        this.recognize(pointerMap, callbacks, srcEvent)
-    }
-
-    recognize(pointers: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>): boolean {
-        super.recognize(pointers, callbacks, srcEvent)
-        if (pointers.size === 1) {
-    
-            if (callbacks[this.handlerName!] !== undefined) {
-
-                const timeAtPointerUp = Date.now()
-                let clickDuration = (timeAtPointerUp - this.timeAtPointerDown!);
-                clickDuration = clickDuration / 1000
-
-                if (clickDuration < .25) {                                  
-                    callbacks[this.handlerName!](this.gestureEvent)
-                }
-            }
-
-            if (this.tapType = GestureType.Tap) {
-                this.tapType = GestureType.DoubleTap
-                this.handlerName = 'onDoubleTap'
-            } 
-
-            return true
-        } 
-        return false   
-    }
+    return false
+  }
 
 }
 
