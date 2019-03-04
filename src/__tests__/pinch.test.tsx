@@ -231,6 +231,84 @@ describe('Test pinch events', () => {
 
   })
 
+  test('test pinch start event', () => {
+    
+    // Lots of examples on the web of mocking  wrapper
+    // instance methods but I could not get it to work.
+    // Resorting to this workaround.
+    const spy = jest.fn((e: GestureEvent) => { return e})
+    PinchTestDiagram.prototype['pinchStart'] = spy
+
+    const wDiagram = mount(<PinchTestDiagram />)
+    const nodes = wDiagram.find('#circle')
+    expect(nodes).toHaveLength(1);
+    const wCircle = nodes.at(0)
+
+    simulatePinch(wCircle, 10, 5, Math.PI/4, false)
+    expect(spy).toHaveBeenCalledTimes(1);  
+
+  })
+
+  test('test pinch move event', () => {
+    
+    // Lots of examples on the web of mocking  wrapper
+    // instance methods but I could not get it to work.
+    // Resorting to this workaround.
+    const spy = jest.fn((e: GestureEvent) => { return e})
+    PinchTestDiagram.prototype['pinchMove'] = spy
+
+    const wDiagram = mount(<PinchTestDiagram />)
+    const nodes = wDiagram.find('#circle')
+    expect(nodes).toHaveLength(1);
+    const wCircle = nodes.at(0)
+
+    const moveCount = simulatePinch(wCircle, 10, 5, Math.PI/4, false)
+    expect(spy).toHaveBeenCalledTimes(moveCount - 1);  
+
+    for (let i = 1; i < moveCount - 1; i++) {
+      const event = spy.mock.results[i].value
+      expect(event.scale).toBeLessThan(1)
+      expect(event.gestureType).toBe(GestureType.PinchMove)
+    }
+
+  })
+
+  test('test pinch end event', () => {
+    
+    // Lots of examples on the web of mocking  wrapper
+    // instance methods but I could not get it to work.
+    // Resorting to this workaround.
+    const spy = jest.fn((e: GestureEvent) => { return e})
+    PinchTestDiagram.prototype['pinchEnd'] = spy
+
+    const wDiagram = mount(<PinchTestDiagram />)
+    const nodes = wDiagram.find('#circle')
+    expect(nodes).toHaveLength(1);
+    const wCircle = nodes.at(0)
+
+    simulatePinch(wCircle, 10, 5, Math.PI/4, false)
+    expect(spy).toHaveBeenCalledTimes(1);  
+
+  })
+
+  test('test pinch cancel event', () => {
+    
+    // Lots of examples on the web of mocking  wrapper
+    // instance methods but I could not get it to work.
+    // Resorting to this workaround.
+    const spy = jest.fn((e: GestureEvent) => { return e})
+    PinchTestDiagram.prototype['pinchCancel'] = spy
+
+    const wDiagram = mount(<PinchTestDiagram />)
+    const nodes = wDiagram.find('#circle')
+    expect(nodes).toHaveLength(1);
+    const wCircle = nodes.at(0)
+
+    simulatePinch(wCircle, 10, 5, Math.PI/4, false, true)
+    expect(spy).toHaveBeenCalledTimes(2);  
+
+  })
+
 
  
 

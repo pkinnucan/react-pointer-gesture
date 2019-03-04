@@ -201,26 +201,30 @@ export class PinchRecognizer extends Recognizer {
 
   prevPointerDiff?: PointerDiff = undefined
 
+  constructor() {
+    super()
+    this.pointerDown = this.pointerDown.bind(this)
+    this.pointerMove = this.pointerMove.bind(this)
+    this.pointerUp = this.pointerUp.bind(this)
+    this.recognize = this.recognize.bind(this)
+    this.pointerCancel = this.pointerCancel.bind(this)
+  }
+
   pointerDown(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
     super.pointerDown(pointersMap, callbacks, srcEvent)
     this.prevPointerDiff = undefined
   }
 
-    pointerMove(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
-        super.pointerMove(pointerMap, callbacks, srcEvent)
-        this.recognize(pointerMap, callbacks, srcEvent)
-    }
+  pointerMove(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerMove(pointerMap, callbacks, srcEvent)
+    this.recognize(pointerMap, callbacks, srcEvent)
+  }
 
   recognize(pointers: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>): boolean {
     super.pointerUp(pointers, callbacks, srcEvent)
 
     // If two pointers are down, check for pinch gestures
     if (pointers.size === 2) {
-
-      let gestureEvent = this.createGestureEvent()
-
-      gestureEvent.gestureType = GestureType.PinchStart
-      this.triggerEvent(callbacks, gestureEvent)
 
       // Calculate the difference between the two pointers. The difference
       // is a vector resulting from subtracting the position vector of one
@@ -242,7 +246,7 @@ export class PinchRecognizer extends Recognizer {
 
         if (prevDiff > 0) {
 
-          gestureEvent = this.createGestureEvent()
+          let gestureEvent = this.createGestureEvent()
 
           const scale = curDiff / prevDiff
           gestureEvent.scale = scale
@@ -260,11 +264,20 @@ export class PinchRecognizer extends Recognizer {
           }
 
           gestureEvent =this.createGestureEvent()
+          gestureEvent.gestureType = GestureType.PinchMove
+          gestureEvent.scale = scale
+          this.triggerEvent(callbacks, gestureEvent)
+
+          gestureEvent =this.createGestureEvent()
           gestureEvent.gestureType = GestureType.Pinch
           gestureEvent.scale = scale
           this.triggerEvent(callbacks, gestureEvent)
 
         }
+      } else {       
+        let gestureEvent = this.createGestureEvent()
+        gestureEvent.gestureType = GestureType.PinchStart
+        this.triggerEvent(callbacks, gestureEvent)
       }
 
       // Cache the distance for the next move event 
@@ -272,19 +285,21 @@ export class PinchRecognizer extends Recognizer {
       return true
     }
 
+    return true
+  }
+
+  pointerUp(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerUp(pointerMap, callbacks, srcEvent)
     if (this.prevPointerDiff !== undefined) {
+      this.prevPointerDiff = undefined
       const gestureEvent = this.createGestureEvent()
       gestureEvent.gestureType = GestureType.PinchEnd
-      this.triggerEvent(callbacks,gestureEvent)
-      return true
-    } else {
-      return false
+      this.triggerEvent(callbacks, gestureEvent)
     }
   }
 
   pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
     super.pointerCancel(pointersMap, callbacks, srcEvent)
-
     const gestureEvent = this.createGestureEvent()
     gestureEvent.gestureType = GestureType.PanCancel
     gestureEvent.gestureType = GestureType.PinchCancel
