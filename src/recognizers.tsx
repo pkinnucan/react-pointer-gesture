@@ -398,6 +398,8 @@ export class RotateRecognizer extends Recognizer {
       this.prevPointerDiff = curPointerDiff
     }
 
+    return true
+
   }
 
   pointerUp(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {

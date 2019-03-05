@@ -16,7 +16,7 @@
     "moduleResolution": "node",
     "pretty": true,
     "target": "es2015",
-    "jsx": "preserve",
+    "jsx": "react",
     "outDir": "lib",
     "lib": [
       "dom",
