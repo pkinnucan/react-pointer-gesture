@@ -200,6 +200,7 @@ export class PanRecognizer extends Recognizer {
 export class PinchRecognizer extends Recognizer {
 
   prevPointerDiff?: PointerDiff = undefined
+  isPtr1: boolean = true
 
   constructor() {
     super()
@@ -225,6 +226,13 @@ export class PinchRecognizer extends Recognizer {
 
     // If two pointers are down, check for pinch gestures
     if (pointers.size === 2) {
+
+      if (this.isPtr1) {
+        this.isPtr1 = false
+        return false
+      } else {
+        this.isPtr1 = true
+      }
 
       // Calculate the difference between the two pointers. The difference
       // is a vector resulting from subtracting the position vector of one
@@ -311,6 +319,7 @@ export class PinchRecognizer extends Recognizer {
 export class RotateRecognizer extends Recognizer {
 
   prevPointerDiff?: PointerDiff = undefined
+  isPtr1: boolean = true
 
   pointerDown(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
     super.pointerDown(pointersMap, callbacks, srcEvent)
@@ -338,14 +347,12 @@ export class RotateRecognizer extends Recognizer {
     // If two pointers are down, check for rotate gestures
     if (pointers.size === 2) {
 
-      let gestureEvent = new GestureEvent({
-        gestureType: GestureType.PinchCancel,
-        pointers: this.pointers,
-        srcEvent
-      })
-
-      gestureEvent.gestureType = GestureType.RotateStart
-      this.triggerEvent(callbacks, gestureEvent)
+      if (this.isPtr1) {
+        this.isPtr1 = false
+        return false
+      } else {
+        this.isPtr1 = true
+      }
 
       // Calculate the difference between the two pointers. The difference
       // is a vector resulting from subtracting the position vector of one
@@ -374,12 +381,7 @@ export class RotateRecognizer extends Recognizer {
           // The pointer difference vector has rotated. Trigger a
           // rotate event
 
-          let gestureEvent = new GestureEvent({
-            gestureType: GestureType.PinchCancel,
-            pointers: this.pointers,
-            srcEvent
-          })
-
+          let gestureEvent = this.createGestureEvent()
           gestureEvent.angle = angle
           gestureEvent.gestureType = GestureType.Rotate
           this.triggerEvent(callbacks, gestureEvent)
@@ -387,35 +389,32 @@ export class RotateRecognizer extends Recognizer {
 
         this.prevPointerDiff = curPointerDiff
         return true
+      } else {       
+        let gestureEvent = this.createGestureEvent()
+        gestureEvent.gestureType = GestureType.RotateStart
+        this.triggerEvent(callbacks, gestureEvent)
       }
 
       this.prevPointerDiff = curPointerDiff
     }
 
+  }
+
+  pointerUp(pointerMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
+    super.pointerUp(pointerMap, callbacks, srcEvent)
     if (this.prevPointerDiff !== undefined) {
-      let gestureEvent = new GestureEvent({
-        gestureType: GestureType.PinchCancel,
-        pointers: this.pointers,
-        srcEvent
-      })
+      this.prevPointerDiff = undefined
+      const gestureEvent = this.createGestureEvent()
       gestureEvent.gestureType = GestureType.RotateEnd
       this.triggerEvent(callbacks, gestureEvent)
-      return true
-    } else {
-      return false
     }
   }
 
   pointerCancel(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
     super.pointerCancel(pointersMap, callbacks, srcEvent)
-    let gestureEvent = new GestureEvent({
-      gestureType: GestureType.PinchCancel,
-      pointers: this.pointers,
-      srcEvent
-    })
-
+    let gestureEvent = this.createGestureEvent()
     gestureEvent.gestureType = GestureType.RotateCancel
-      this.triggerEvent(callbacks, gestureEvent)
+    this.triggerEvent(callbacks, gestureEvent)
   }
 
 }

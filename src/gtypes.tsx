@@ -136,7 +136,6 @@ export enum GestureType {
 
     Rotate = 'Rotate',
     RotateStart = 'RotateStart',
-    RotateMove = 'RotateMove',
     RotateEnd = 'RotateEnd',
     RotateCancel = 'RotateCancel',
 

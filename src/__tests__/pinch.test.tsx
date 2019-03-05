@@ -92,7 +92,7 @@ const simulatePinch = (wElem: any, startDiff: number, endDiff: number, pinchAngl
   wElem.simulate('pointerdown', {pointerId: 1, clientX: xPtr2, clientY: yPtr2}) 
 
   let ptrDiff = startDiff
-  let moveCount = 0
+  let pinchCount = 0
 
   if (pinchOut) {
     while (ptrDiff < endDiff) {
@@ -103,7 +103,7 @@ const simulatePinch = (wElem: any, startDiff: number, endDiff: number, pinchAngl
       yPtr2 = yPtr2 - dy
       wElem.simulate('pointermove', {pointerId: 0, clientX: xPtr1, clientY: yPtr1})
       wElem.simulate('pointermove', {pointerId: 1, clientX: xPtr2, clientY: yPtr2})
-      moveCount = moveCount + 2
+      pinchCount = pinchCount + 1
     }
   } else {
     while (ptrDiff > endDiff) {
@@ -114,7 +114,7 @@ const simulatePinch = (wElem: any, startDiff: number, endDiff: number, pinchAngl
       yPtr2 = yPtr2 - dy
       wElem.simulate('pointermove', {pointerId: 0, clientX: xPtr1, clientY: yPtr1})
       wElem.simulate('pointermove', {pointerId: 1, clientX: xPtr2, clientY: yPtr2})
-      moveCount = moveCount + 2
+      pinchCount = pinchCount + 1
     }
 
   }
@@ -127,7 +127,7 @@ const simulatePinch = (wElem: any, startDiff: number, endDiff: number, pinchAngl
     wElem.simulate('pointercancel', {pointerId: 1, clientX: xPtr2, clientY: yPtr2})
   }
 
-  return moveCount
+  return pinchCount
 
 }
 
@@ -148,10 +148,10 @@ describe('Test pinch events', () => {
     expect(nodes).toHaveLength(1);
     const wCircle = nodes.at(0)
 
-    const moveCount = simulatePinch(wCircle, 10, 5, Math.PI/4, false)
-    expect(spy).toHaveBeenCalledTimes(moveCount - 1);  
+    const pinchCount = simulatePinch(wCircle, 10, 5, Math.PI/4, false)
+    expect(spy).toHaveBeenCalledTimes(pinchCount - 1);  
 
-    for (let i = 1; i < moveCount - 1; i++) {
+    for (let i = 1; i < pinchCount - 1; i++) {
       const event = spy.mock.results[i].value
       expect(event.scale).toBeLessThan(1)
       expect(event.gestureType).toBe(GestureType.PinchIn)
@@ -172,10 +172,10 @@ describe('Test pinch events', () => {
     expect(nodes).toHaveLength(1);
     const wCircle = nodes.at(0)
 
-    const moveCount = simulatePinch(wCircle, 5, 15, Math.PI/6, true)
-    expect(spy).toHaveBeenCalledTimes(moveCount - 1);  
+    const pinchCount = simulatePinch(wCircle, 5, 15, Math.PI/6, true)
+    expect(spy).toHaveBeenCalledTimes(pinchCount - 1);  
 
-    for (let i = 1; i < moveCount - 1; i++) {
+    for (let i = 1; i < pinchCount - 1; i++) {
       const event = spy.mock.results[i].value
       expect(event.scale).toBeGreaterThan(1)
       expect(event.gestureType).toBe(GestureType.PinchOut)
@@ -196,10 +196,10 @@ describe('Test pinch events', () => {
     expect(nodes).toHaveLength(1);
     const wCircle = nodes.at(0)
 
-    const moveCount = simulatePinch(wCircle, 5, 15, Math.PI/2, true)
-    expect(spy).toHaveBeenCalledTimes(moveCount - 1);
+    const pinchCount = simulatePinch(wCircle, 5, 15, Math.PI/2, true)
+    expect(spy).toHaveBeenCalledTimes(pinchCount - 1);
     
-    for (let i = 1; i < moveCount - 1; i++) {
+    for (let i = 1; i < pinchCount - 1; i++) {
       const event = spy.mock.results[i].value
       expect(event.scale).toBeGreaterThan(1)
       expect(event.gestureType).toBe(GestureType.Pinch)
@@ -220,10 +220,10 @@ describe('Test pinch events', () => {
     expect(nodes).toHaveLength(1);
     const wCircle = nodes.at(0)
 
-    const moveCount = simulatePinch(wCircle, 10, 5, Math.PI/4, false)
-    expect(spy).toHaveBeenCalledTimes(moveCount - 1);  
+    const pinchCount = simulatePinch(wCircle, 10, 5, Math.PI/4, false)
+    expect(spy).toHaveBeenCalledTimes(pinchCount - 1);  
 
-    for (let i = 1; i < moveCount - 1; i++) {
+    for (let i = 1; i < pinchCount - 1; i++) {
       const event = spy.mock.results[i].value
       expect(event.scale).toBeLessThan(1)
       expect(event.gestureType).toBe(GestureType.Pinch)
@@ -262,10 +262,10 @@ describe('Test pinch events', () => {
     expect(nodes).toHaveLength(1);
     const wCircle = nodes.at(0)
 
-    const moveCount = simulatePinch(wCircle, 10, 5, Math.PI/4, false)
-    expect(spy).toHaveBeenCalledTimes(moveCount - 1);  
+    const pinchCount = simulatePinch(wCircle, 10, 5, Math.PI/4, false)
+    expect(spy).toHaveBeenCalledTimes(pinchCount - 1);  
 
-    for (let i = 1; i < moveCount - 1; i++) {
+    for (let i = 1; i < pinchCount - 1; i++) {
       const event = spy.mock.results[i].value
       expect(event.scale).toBeLessThan(1)
       expect(event.gestureType).toBe(GestureType.PinchMove)
