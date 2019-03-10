@@ -1,5 +1,5 @@
 import * as React from 'react'
-import {Recognizer} from './recognizers'
+import Recognizer from './recognizers/Recognizer'
 
 export class Point {
     x: number
@@ -153,6 +153,25 @@ export enum GestureType {
     Unknown  = 'Unknown'
 
 }
+
+export enum GenericGestureType {
+  Pan = 'Pan',
+  Pinch = 'Pinch',
+  Rotate = 'Rotate',
+  Swipe = 'Swipe',
+  Tap = 'Tap'
+}
+
+export type GenericGestureTypesType = Array<GenericGestureType>
+
+export const genericGestureTypes: GenericGestureTypesType = 
+[
+  GenericGestureType.Pan, 
+  GenericGestureType.Pinch,
+  GenericGestureType.Rotate,
+  GenericGestureType.Swipe,
+  GenericGestureType.Tap
+]
 
 export type PointerMoveDelta = {
     dx: number,

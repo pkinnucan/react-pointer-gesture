@@ -9,7 +9,7 @@ import Adapter from 'enzyme-adapter-react-16';
 
 configure({ adapter: new Adapter() });
 
-let clock : any
+let clock : lolex.NodeClock
 
 type SwipeTestDiagramState = {
   tx: number
@@ -130,7 +130,7 @@ describe('Test swipe events', () => {
   })
 
   afterEach(() => {
-    clock.uninstall()
+    clock.reset()
   })
 
   test('test fast left swipe', () => {

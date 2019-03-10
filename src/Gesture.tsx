@@ -1,22 +1,17 @@
 /* tslint:disable:no-console */
 import * as React from 'react'
 import {getEventName} from './util'
-import {Recognizer, 
-        PanRecognizer,
-        PinchRecognizer,
-        RotateRecognizer, 
-        SwipeRecognizer,
-        TapRecognizer} from './recognizers'
+import Recognizer from './recognizers/Recognizer'
+import recognizerRegistry from './recognizers/RecognizerRegistry'
 import {Pointer, Pointers} from './gtypes'
-import {GestureProps} from './gtypes'
+import {GestureProps, GenericGestureTypesType, GenericGestureType, genericGestureTypes} from './gtypes'
 // import {log} from './util'
 
 
 class Gesture extends React.Component<GestureProps, Object> {
 
   pointers: Pointers = new Map<number, Pointer>()
-
-  recognizer = new Array<Recognizer>()
+  recognizers = new Array<Recognizer>()
 
   constructor(props: GestureProps) {
     super(props)
@@ -25,20 +20,38 @@ class Gesture extends React.Component<GestureProps, Object> {
     this._handlePointerMove = this._handlePointerMove.bind(this)
     this._handlePointerUp = this._handlePointerUp.bind(this)
     this._handlePointerCancel = this._handlePointerCancel.bind(this)
+    this.getExpectedGestures = this.getExpectedGestures.bind(this)
 
 
     this.triggerUserCb = this.triggerUserCb.bind(this)
 
-    this.recognizer.push(new PinchRecognizer())
-    this.recognizer.push(new RotateRecognizer())
-    this.recognizer.push(new PanRecognizer())
-    this.recognizer.push(new SwipeRecognizer())
-    this.recognizer.push(new TapRecognizer())
-
-    if (props.recognizers !== undefined) {
-      this.recognizer = this.recognizer.concat(props.recognizers)
+    const expectedGestures = this.getExpectedGestures()
+    if (expectedGestures !== undefined) {
+      expectedGestures.forEach((gesture) => {
+        const recognizer = recognizerRegistry.getRecognizer(gesture)
+        if (recognizer !== undefined) {
+          this.recognizers.push(recognizer)
+        }
+      })
     }
 
+    if (props.recognizers !== undefined) {
+      this.recognizers = this.recognizers.concat(props.recognizers)
+    }
+
+  }
+
+  getExpectedGestures() : GenericGestureTypesType | undefined {
+
+    let types: GenericGestureTypesType = new Array()
+    for (let prop in this.props) {
+      genericGestureTypes.forEach((type) => {
+        if (prop.indexOf(type) > -1) {
+          types.push(type as GenericGestureType)
+        }
+      })
+    }     
+    return [...new Set(types)]
   }
 
   /**
@@ -62,8 +75,8 @@ class Gesture extends React.Component<GestureProps, Object> {
 
     // log(`pointer ${e.pointerId} down `)
 
-    for (let i = 0; i < this.recognizer.length; i++) {
-      this.recognizer[i].pointerDown(this.pointers, this.props, e)
+    for (let i = 0; i < this.recognizers.length; i++) {
+      this.recognizers[i].pointerDown(this.pointers, this.props, e)
     }
 
   }
@@ -82,8 +95,8 @@ class Gesture extends React.Component<GestureProps, Object> {
       // log(` dx: ${pointer.dx}`)
       // log(` dy: ${pointer.dx}`)
 
-      for (let i = 0; i < this.recognizer.length; i++) {
-        this.recognizer[i].pointerMove(this.pointers, this.props, e)
+      for (let i = 0; i < this.recognizers.length; i++) {
+        this.recognizers[i].pointerMove(this.pointers, this.props, e)
       }
     }
   } 
@@ -103,8 +116,8 @@ class Gesture extends React.Component<GestureProps, Object> {
     e.stopPropagation()
     this.triggerUserCb('up', e)
 
-    for (let i = 0; i < this.recognizer.length; i++) {
-      this.recognizer[i].pointerUp(this.pointers, this.props, e)
+    for (let i = 0; i < this.recognizers.length; i++) {
+      this.recognizers[i].pointerUp(this.pointers, this.props, e)
     }
 
     this.pointers.delete(e.pointerId)
@@ -115,8 +128,8 @@ class Gesture extends React.Component<GestureProps, Object> {
     // log(`pointer ${e.pointerId} cancel`)
     this.triggerUserCb('cancel', e)
 
-    for (let i = 0; i < this.recognizer.length; i++) {
-      this.recognizer[i].pointerCancel(this.pointers, this.props, e)
+    for (let i = 0; i < this.recognizers.length; i++) {
+      this.recognizers[i].pointerCancel(this.pointers, this.props, e)
     }
 
     this.pointers.delete(e.pointerId)
