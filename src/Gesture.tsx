@@ -2,6 +2,7 @@
 import * as React from 'react'
 import {getEventName} from './util'
 import Recognizer from './recognizers/Recognizer'
+import TapRecognizer from './recognizers/TapRecognizer'
 import recognizerRegistry from './recognizers/RecognizerRegistry'
 import {Pointer, Pointers} from './gtypes'
 import {GestureProps, GenericGestureTypesType, GenericGestureType, genericGestureTypes} from './gtypes'
@@ -31,6 +32,10 @@ class Gesture extends React.Component<GestureProps, Object> {
         const recognizer = recognizerRegistry.getRecognizer(gesture)
         if (recognizer !== undefined) {
           this.recognizers.push(recognizer)
+          if (recognizer instanceof TapRecognizer) {
+            TapRecognizer.tapInterval = this.props.tapInterval ? this.props.tapInterval : 250
+            TapRecognizer.doubleTapInterval = this.props.doubleTapInterval ? this.props.doubleTapInterval : 250
+          }
         }
       })
     }

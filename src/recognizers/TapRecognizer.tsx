@@ -9,6 +9,8 @@ class TapRecognizer extends Recognizer {
   handlerName: string | undefined
 
   static doubleTapTarget: any | undefined = undefined
+  static tapInterval = 250 // Time in milliseconds between tap pointer down, pointer up
+  static doubleTapInterval = 250  // Time in millisections between double tap taps
 
   pointerDown(pointersMap: Pointers, callbacks: GestureProps, srcEvent: React.PointerEvent<any>) {
     super.pointerDown(pointersMap, callbacks, srcEvent)
@@ -22,8 +24,8 @@ class TapRecognizer extends Recognizer {
     if (TapRecognizer.doubleTapTarget === undefined || target !== TapRecognizer.doubleTapTarget) {
       TapRecognizer.doubleTapTarget = target
     } else {
-      const timeBetweenTaps = this.timeAtPointerUp! - this.timeAtPointerDown
-      if (timeBetweenTaps < 250) {
+      const timeBetweenTaps = this.timeAtPointerDown - this.timeAtPointerUp!
+      if (timeBetweenTaps < TapRecognizer.doubleTapInterval) {
         this.tapType = GestureType.DoubleTap
         this.handlerName = 'onDoubleTap'
       }
@@ -51,10 +53,9 @@ class TapRecognizer extends Recognizer {
 
       if (callbacks[this.handlerName!] !== undefined) {
 
-        let clickDuration = (this.timeAtPointerUp! - this.timeAtPointerDown!);
-        clickDuration = clickDuration
+        let tapInterval = (this.timeAtPointerUp! - this.timeAtPointerDown!);
 
-        if (clickDuration < 250) {
+        if (tapInterval < TapRecognizer.tapInterval) {
           const gestureEvent = this.createGestureEvent()
           gestureEvent.gestureType = this.tapType!
           callbacks[this.handlerName!](gestureEvent)

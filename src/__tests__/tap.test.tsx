@@ -10,11 +10,14 @@ configure({ adapter: new Adapter() });
 
 let clock : lolex.NodeClock
 
-type TapTestDiagramState = {
-
+type TapTestDiagramProps = {
+  tapInterval?: number
+  doubleTapInterval?: number
 }
 
-class TapTestDiagram extends React.Component<Object, TapTestDiagramState> {
+class TapTestDiagram extends React.Component<TapTestDiagramProps, Object> {
+
+
 
   constructor(props: Object) {
     super(props)
@@ -35,6 +38,9 @@ class TapTestDiagram extends React.Component<Object, TapTestDiagramState> {
       <Gesture
         onTap={this.tap}
         onDoubleTap={this.doubleTap}
+
+        tapInterval={this.props.tapInterval}
+        doubleTapInterval={this.props.doubleTapInterval}
       >
         <svg viewBox="0, 0, 500, 500" style={{ touchAction: "none" }}>
           <g id="g">
@@ -107,6 +113,23 @@ describe('Test tap events', () => {
     expect(spy).toHaveBeenCalledTimes(0);  
   })
 
+  test('test custom tap interval', () => {
+    
+    // Lots of examples on the web of mocking  wrapper
+    // instance methods but I could not get it to work.
+    // Resorting to this workaround.
+    const spy = jest.fn((_e: GestureEvent) => {})
+    TapTestDiagram.prototype['tap'] = spy
+
+    const wDiagram = mount(<TapTestDiagram tapInterval={270} />)
+    const nodes = wDiagram.find('#circle')
+    expect(nodes).toHaveLength(1);
+    const wCircle = nodes.at(0)
+
+    simulateTap(wCircle, 260)
+    expect(spy).toHaveBeenCalledTimes(1);  
+  })
+
   test('test double tap', () => {
     
     // Lots of examples on the web of mocking  wrapper
@@ -135,6 +158,25 @@ describe('Test tap events', () => {
     TapTestDiagram.prototype['doubleTap'] = spy
 
     const wDiagram = mount(<TapTestDiagram />)
+    const nodes = wDiagram.find('#circle')
+    expect(nodes).toHaveLength(1);
+    const wCircle = nodes.at(0)
+
+    simulateTap(wCircle, 240) 
+    clock.tick(260)
+    simulateTap(wCircle, 240)
+    expect(spy).toHaveBeenCalledTimes(0);  
+  })
+
+  test('test custom double tap interval', () => {
+    
+    // Lots of examples on the web of mocking  wrapper
+    // instance methods but I could not get it to work.
+    // Resorting to this workaround.
+    const spy = jest.fn((_e: GestureEvent) => {})
+    TapTestDiagram.prototype['doubleTap'] = spy
+
+    const wDiagram = mount(<TapTestDiagram doubleTapInterval={270}/>)
     const nodes = wDiagram.find('#circle')
     expect(nodes).toHaveLength(1);
     const wCircle = nodes.at(0)

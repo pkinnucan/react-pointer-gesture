@@ -254,5 +254,7 @@ export type GestureProps = {
     onPointerCancel?: React.PointerEventHandler<any>;
 
     recognizers?: Array<Recognizer>
+    tapInterval?: number
+    doubleTapInterval?: number
 }
 
