@@ -143,7 +143,7 @@ class Gesture extends React.Component<GestureProps, Object> {
   render() {
     const children = this.props.children
 
-    const child = React.Children.only(children);
+    const child:any = React.Children.only(children);
 
     const events = {
       onPointerDown: this._handlePointerDown,
