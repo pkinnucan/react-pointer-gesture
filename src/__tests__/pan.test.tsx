@@ -95,11 +95,12 @@ type PanResult = {
 }
 
 /**
- * Simulate dragging a diagram element. This method moves the pointer 10 times
- * by the amount specified by a displacement vector.
+ * Simulate dragging a diagram element. This method moves the pointer 
+ * in the direction specified by the displacement vector by the amount
+ * specified by the displacement vector.
  * 
  * @param wElem Enzyme wrapper around diagram element to be dragged
- * @param v Move displacement vector
+ * @param v Move displacement vector. Specifies the total length and direction of drag.
  * @param cancel Cancel the drag operation
  */
 const simulatePan = (wElem: NodeWrapper, v: Vector, cancel?: boolean): PanResult => {
@@ -150,7 +151,7 @@ describe('Test pan gestures', () => {
 
   test('test pan down', () => {
     const r = simulatePan(wCircle, {length: 10, angle: Math.PI/2})
-    const state = wDiagram.state() as PanTestDiagramState
+    const state:PanTestDiagramState = wDiagram.state()
     expect(state.tx).toBeCloseTo(r.tx, 2)
     expect(state.ty).toBeCloseTo(r.ty, 2) 
   })
