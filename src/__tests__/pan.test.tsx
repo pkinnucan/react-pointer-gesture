@@ -1,18 +1,24 @@
 import * as React from 'react'
 import Gesture from '../Gesture'
 import { GestureEvent } from '../gtypes';
-import {configure, mount} from 'enzyme'
-
+import {configure, mount, ReactWrapper, HTMLAttributes} from 'enzyme'
 import Adapter from 'enzyme-adapter-react-16';
 
-
+/* Configure enzyme to work with react 16. This is necessary for debugger.*/
 configure({ adapter: new Adapter() });
 
+/**
+ * Position of pointer in test diagram.
+ */
 type PanTestDiagramState = {
   tx: number
   ty: number
 }
 
+/**
+ * A React component that models an SVG diagram that reacts to pointer gestures.
+ * The pan tests use this component with enzyme to test pan gestures.
+ */
 class PanTestDiagram extends React.Component<Object, PanTestDiagramState> {
 
   constructor(props: Object) {
@@ -30,6 +36,11 @@ class PanTestDiagram extends React.Component<Object, PanTestDiagramState> {
 
   }
 
+  /**
+   * Invoked by a pan gesture. Updates the position of the pointer.
+   * 
+   * @param e gesture event
+   */
   pan(e: GestureEvent): void {       
     const tx = this.state.tx + e.delta!.dx
     const ty = this.state.ty + e.delta!.dy
@@ -41,7 +52,10 @@ class PanTestDiagram extends React.Component<Object, PanTestDiagramState> {
   panEnd(_e: GestureEvent): void {}
   panCancel(_e: GestureEvent): void {}
 
-
+  /** 
+   * Returns a Gesture component that wraps the test diagram, thereby
+   * enabling the test diagram component to react to pointer gestures.
+  */
   render() {
     return (
       <Gesture
@@ -64,6 +78,12 @@ class PanTestDiagram extends React.Component<Object, PanTestDiagramState> {
   }
 }
 
+/* Defines enzyme wrapper for diagram component */
+interface DiagramWrapper extends ReactWrapper<Object, PanTestDiagramState, PanTestDiagram> {}
+
+/* Defines enzyme wrapper around a DOM node */
+interface NodeWrapper extends ReactWrapper<HTMLAttributes, any, React.Component<{}, {}, any>> {}
+
 type Vector = {
   length: number,
   angle: number
@@ -74,7 +94,15 @@ type PanResult = {
   ty: number
 }
 
-const simulatePan = (wElem: any, v: Vector, cancel?: boolean): PanResult => {
+/**
+ * Simulate dragging a diagram element. This method moves the pointer 10 times
+ * by the amount specified by a displacement vector.
+ * 
+ * @param wElem Enzyme wrapper around diagram element to be dragged
+ * @param v Move displacement vector
+ * @param cancel Cancel the drag operation
+ */
+const simulatePan = (wElem: NodeWrapper, v: Vector, cancel?: boolean): PanResult => {
   const ds = v.length/10;
   const dx = ds * Math.cos(v.angle)
   const dy = ds * Math.sin(v.angle)
@@ -104,19 +132,19 @@ const simulatePan = (wElem: any, v: Vector, cancel?: boolean): PanResult => {
 
 describe('Test pan gestures', () => {
 
-  let wDiagram: any
-  let wCircle: any
+  let wDiagram: DiagramWrapper
+  let wCircle: NodeWrapper
 
 
   beforeEach(() => {
     wDiagram = mount(<PanTestDiagram />)
     expect(wDiagram).toBeDefined()
-    const state = wDiagram.state() as PanTestDiagramState
+    const state:PanTestDiagramState = wDiagram.state()
     expect(state.tx).toEqual(0)
     expect(state.ty).toEqual(0)
-    const nodes = wDiagram.find('#circle')
+    const nodes:NodeWrapper = wDiagram.find('#circle')
     expect(nodes).toHaveLength(1);
-    wCircle = nodes.at(0)
+    wCircle= nodes.at(0)
   })
 
 
@@ -129,28 +157,28 @@ describe('Test pan gestures', () => {
 
   test('test pan up', () => {
     const r = simulatePan(wCircle, {length: 10, angle: -Math.PI/2})
-    const state = wDiagram.state() as PanTestDiagramState
+    const state:PanTestDiagramState = wDiagram.state()
     expect(state.tx).toBeCloseTo(r.tx, 2)
     expect(state.ty).toBeCloseTo(r.ty, 2)  
   })
 
   test('test pan right', () => {
     const r = simulatePan(wCircle, {length: 10, angle: 0})
-    const state = wDiagram.state() as PanTestDiagramState
+    const state:PanTestDiagramState = wDiagram.state()
     expect(state.tx).toBeCloseTo(r.tx, 2)
     expect(state.ty).toBeCloseTo(r.ty, 2)  
   })
 
   test('test pan left', () => {
     const r = simulatePan(wCircle, {length: 10, angle: Math.PI})
-    const state = wDiagram.state() as PanTestDiagramState
+    const state:PanTestDiagramState= wDiagram.state()
     expect(state.tx).toBeCloseTo(r.tx, 2)
     expect(state.ty).toBeCloseTo(r.ty, 2)  
   })
 
   test('test pan diagonal', () => {
     const r = simulatePan(wCircle, {length: 10, angle: Math.PI/4})
-    const state = wDiagram.state() as PanTestDiagramState
+    const state:PanTestDiagramState = wDiagram.state()
     expect(state.tx).toBeCloseTo(r.tx, 2)
     expect(state.ty).toBeCloseTo(r.ty, 2)  
   })
@@ -167,14 +195,14 @@ describe('Test pan events', () => {
     const spy = jest.fn((_e: GestureEvent) => {})
     PanTestDiagram.prototype['panStart'] = spy
 
-    const wDiagram = mount(<PanTestDiagram />)
-    const nodes = wDiagram.find('#circle')
+    const wDiagram:DiagramWrapper = mount(<PanTestDiagram />)
+    const nodes:NodeWrapper = wDiagram.find('#circle')
     expect(nodes).toHaveLength(1);
-    const wCircle = nodes.at(0)
+    const wCircle:NodeWrapper = nodes.at(0)
 
     const r = simulatePan(wCircle, {length: 10, angle: Math.PI/4})
     expect(spy).toHaveBeenCalledTimes(1);
-    const state = wDiagram.state() as PanTestDiagramState
+    const state:PanTestDiagramState = wDiagram.state() as PanTestDiagramState
     expect(state.tx).toBeCloseTo(r.tx, 2)
     expect(state.ty).toBeCloseTo(r.ty, 2)  
   })
@@ -187,14 +215,14 @@ describe('Test pan events', () => {
     const spy = jest.fn((_e: GestureEvent) => {})
     PanTestDiagram.prototype['panMove'] = spy
 
-    const wDiagram = mount(<PanTestDiagram />)
-    const nodes = wDiagram.find('#circle')
+    const wDiagram:DiagramWrapper = mount(<PanTestDiagram />)
+    const nodes:NodeWrapper = wDiagram.find('#circle')
     expect(nodes).toHaveLength(1);
-    const wCircle = nodes.at(0)
+    const wCircle:NodeWrapper = nodes.at(0)
 
     const r = simulatePan(wCircle, {length: 10, angle: Math.PI/4})
     expect(spy).toHaveBeenCalledTimes(9);
-    const state = wDiagram.state() as PanTestDiagramState
+    const state:PanTestDiagramState = wDiagram.state()
     expect(state.tx).toBeCloseTo(r.tx, 2)
     expect(state.ty).toBeCloseTo(r.ty, 2)  
   })
@@ -207,14 +235,14 @@ describe('Test pan events', () => {
     const spy = jest.fn((_e: GestureEvent) => {})
     PanTestDiagram.prototype['panEnd'] = spy
 
-    const wDiagram = mount(<PanTestDiagram />)
-    const nodes = wDiagram.find('#circle')
+    const wDiagram:DiagramWrapper = mount(<PanTestDiagram />)
+    const nodes:NodeWrapper = wDiagram.find('#circle')
     expect(nodes).toHaveLength(1);
-    const wCircle = nodes.at(0)
+    const wCircle:NodeWrapper = nodes.at(0)
 
     const r = simulatePan(wCircle, {length: 10, angle: Math.PI/4})
     expect(spy).toHaveBeenCalledTimes(1);
-    const state = wDiagram.state() as PanTestDiagramState
+    const state:PanTestDiagramState = wDiagram.state()
     expect(state.tx).toBeCloseTo(r.tx, 2)
     expect(state.ty).toBeCloseTo(r.ty, 2)  
   })
@@ -227,18 +255,16 @@ describe('Test pan events', () => {
     const spy = jest.fn((_e: GestureEvent) => {})
     PanTestDiagram.prototype['panCancel'] = spy
 
-    const wDiagram = mount(<PanTestDiagram />)
-    const nodes = wDiagram.find('#circle')
+    const wDiagram:DiagramWrapper = mount(<PanTestDiagram />)
+    const nodes:NodeWrapper = wDiagram.find('#circle')
     expect(nodes).toHaveLength(1);
-    const wCircle = nodes.at(0)
+    const wCircle:NodeWrapper = nodes.at(0)
 
     const r = simulatePan(wCircle, {length: 10, angle: Math.PI/4}, true)
     expect(spy).toHaveBeenCalledTimes(1);
-    const state = wDiagram.state() as PanTestDiagramState
+    const state:PanTestDiagramState = wDiagram.state()
     expect(state.tx).toBeCloseTo(r.tx, 2)
     expect(state.ty).toBeCloseTo(r.ty, 2)  
   })
-
-
 
 })
