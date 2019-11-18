@@ -150,14 +150,14 @@ describe('Test pan gestures', () => {
 
 
   test('test pan down', () => {
-    const r = simulatePan(wCircle, {length: 10, angle: Math.PI/2})
+    const r:PanResult = simulatePan(wCircle, {length: 10, angle: Math.PI/2})
     const state:PanTestDiagramState = wDiagram.state()
     expect(state.tx).toBeCloseTo(r.tx, 2)
     expect(state.ty).toBeCloseTo(r.ty, 2) 
   })
 
   test('test pan up', () => {
-    const r = simulatePan(wCircle, {length: 10, angle: -Math.PI/2})
+    const r:PanResult = simulatePan(wCircle, {length: 10, angle: -Math.PI/2})
     const state:PanTestDiagramState = wDiagram.state()
     expect(state.tx).toBeCloseTo(r.tx, 2)
     expect(state.ty).toBeCloseTo(r.ty, 2)  
