@@ -212,6 +212,8 @@ export type GestureEventHandler = (e: GestureEvent) => void;
 
 export type GestureProps = {
 
+    [key:string]: GestureEventHandler | React.PointerEventHandler<any> | Array<Recognizer> | number | undefined
+
     onPan?: GestureEventHandler
     onPanStart?: GestureEventHandler
     onPanMove?: GestureEventHandler

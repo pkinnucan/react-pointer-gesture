@@ -48,7 +48,7 @@ class Gesture extends React.Component<GestureProps, Object> {
 
   getExpectedGestures() : GenericGestureTypesType | undefined {
 
-    let types: GenericGestureTypesType = new Array()
+    let types: GenericGestureTypesType = []
     for (let prop in this.props) {
       genericGestureTypes.forEach((type) => {
         if (prop.indexOf(type) > -1) {
@@ -64,9 +64,12 @@ class Gesture extends React.Component<GestureProps, Object> {
    * touch events (start, move, end), this function invokes the callback.
    */
   triggerUserCb = (eventSubtype: string, e: React.PointerEvent<any>) => {
-    const cbName = getEventName('onPointer', eventSubtype);
+    const cbName = getEventName("onPointer", eventSubtype)
     if (cbName in this.props) {
-      this.props[cbName](e);
+      const handler = this.props[cbName] as any
+      if (handler !== undefined) {
+        handler(e)
+      }
     }
   }
 
