@@ -56,7 +56,7 @@ class Gesture extends React.Component<GestureProps, Object> {
         }
       })
     }     
-    return [...new Set(types)]
+    return [...Array.from(new Set(types))];
   }
 
   /**
